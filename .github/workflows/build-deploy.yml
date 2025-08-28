@@ -1,4 +1,4 @@
-name: Deploy Auth Container
+name: Deploy Copilot Metrics Viewer Container
 
 on:
   workflow_dispatch:
