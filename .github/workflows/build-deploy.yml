@@ -1,0 +1,41 @@
+name: Deploy Auth Container
+
+on:
+  workflow_dispatch:
+    inputs:
+      ENVIRONMENT:
+        description: 'Select the deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
+          - qa
+          - uat
+      DEPLOY_TO_CLOUDRUN:
+        description: 'Check box to deploy to Cloud Run'
+        required: true
+        default: 'false'
+        type: boolean
+
+jobs:
+  invoke-shared-workflow:
+    uses: aymiratech/devops-shared/.github/workflows/build-publish-container-v2.yml@main
+    with:
+      PROJECT_ENVIRONMENT: dev
+      BRANCH: ${{ github.ref_name }}
+      REPO: ${{ github.event.repository.name }}
+      IMAGE: auth
+      BUILD_ENVIRONMENT: ${{ inputs.ENVIRONMENT }}
+      UNIQUE_COMMANDS: '[
+          {"command": "COMMON_LIBRARY_TOKEN_VALUE=$(gcloud secrets versions access latest --secret=ot_common_library_token --project=grand-signifier-215420 --format=\"get(payload.data)\" | base64 -d)"},
+          {"command": "COMMON_LIBRARY_USERNAME_VALUE=$(gcloud secrets versions access latest --secret=ot_common_library_user --project=grand-signifier-215420 --format=\"get(payload.data)\" | base64 -d)"},
+          {"command": "sed -i \"s|ENV COMMON_LIBRARY_USERNAME=.*|ENV COMMON_LIBRARY_USERNAME=$COMMON_LIBRARY_USERNAME_VALUE|\" Dockerfile"},
+          {"command": "sed -i \"s|ENV COMMON_LIBRARY_TOKEN=.*|ENV COMMON_LIBRARY_TOKEN=$COMMON_LIBRARY_TOKEN_VALUE|\" Dockerfile"}
+        ]'
+
+      DEPLOY_TO_CLOUDRUN: ${{ inputs.DEPLOY_TO_CLOUDRUN }}
+      CLOUD_RUN_INSTANCE: copilot-metrics-viewer
+      CLOUD_RUN_REGION: us-east1
+    secrets: inherit

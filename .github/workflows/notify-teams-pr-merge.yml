@@ -1,0 +1,20 @@
+name: Notify Teams on PR Merge
+on:
+  pull_request:
+    types: [closed]
+    branches:
+      - develop
+      - main
+      - master
+jobs:
+  invoke-shared-workflow:
+    if: ${{ github.event.pull_request.merged == true }}
+    uses: aymiratech/devops-shared/.github/workflows/notify-teams.yml@main
+    with:
+      PROJECT_ID: grand-signifier-215420
+      CHANNEL: "Github PR Feed"
+      TITLE: "Repository Branch Merge"
+      REPOSITORY_NAME: ${{ github.event.repository.name }}
+      MESSAGE: "**[${{ github.event.pull_request.title }}]** (PR #${{ github.event.pull_request.number }}) merged into **${{ github.event.pull_request.base.ref }}** branch by **${{ github.actor }}**"
+      URL_LINK: "https://github.com/${{ github.repository }}/pull/${{ github.event.pull_request.number }}"
+    secrets: inherit
